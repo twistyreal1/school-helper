@@ -111,7 +111,7 @@ void main() {
     );
 
     expect(find.text('Liquid Glass Content'), findsOneWidget);
-    expect(find.byType(BackdropFilter), findsWidgets);
+    expect(find.byType(LiquidGlassContainer), findsOneWidget);
   });
 
   testWidgets('HomeScreen renders liquid glass header, stats banner, search bar and subjects',

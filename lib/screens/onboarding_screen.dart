@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/topic_model.dart';
+import '../widgets/install_app_dialog.dart';
 import '../services/user_prefs_service.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/liquid_glass.dart';
@@ -56,10 +57,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (widget.isEditing) {
       Navigator.of(context).maybePop();
     } else {
+      if (isAppAlreadyInstalled()) {
+        Navigator.of(context).pushReplacement(
+          createOnboardingToHomeRoute(const HomeScreen()),
+        );
+      } else {
+        _showInstallPromptOrProceed();
+      }
+    }
+  }
+
+  void _showInstallPromptOrProceed() {
+    showInstallAppDialog(context).then((_) {
+      if (!mounted) return;
       Navigator.of(context).pushReplacement(
         createOnboardingToHomeRoute(const HomeScreen()),
       );
-    }
+    });
   }
 
   void _goToNextPage() {
@@ -714,7 +728,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Фон и стекло Liquid Glass подстраиваются в реальном времени:',
+                'Тема оформления подстраивается под твой выбор:',
                 style: TextStyle(
                   fontSize: 14,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
@@ -915,7 +929,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       case AppThemeMode.modernBlue:
         return const Color(0xFF2563EB);
       case AppThemeMode.midnightCyber:
-        return const Color(0xFF8B5CF6);
+        return const Color(0xFF6366F1);
       case AppThemeMode.emeraldMatcha:
         return const Color(0xFF059669);
       case AppThemeMode.warmNotebook:
@@ -928,7 +942,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       case AppThemeMode.modernBlue:
         return const Color(0xFF0284C7);
       case AppThemeMode.midnightCyber:
-        return const Color(0xFF06B6D4);
+        return const Color(0xFF38BDF8);
       case AppThemeMode.emeraldMatcha:
         return const Color(0xFF10B981);
       case AppThemeMode.warmNotebook:

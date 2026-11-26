@@ -24,6 +24,20 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
+  bool get _isChemistry => widget.topic.subjectId == 'chemistry';
+  // Информатика и гуманитарные предметы не должны превращать V2, B2, function_name в химические/подстрочные индексы
+  bool get _preservePlainIdentifiers => const {
+        'informatics',
+        'english',
+        'russian',
+        'literature',
+        'history',
+      }.contains(widget.topic.subjectId);
+  bool get _allowSlashFractions =>
+      widget.topic.subjectId != 'english' &&
+      widget.topic.subjectId != 'russian' &&
+      widget.topic.subjectId != 'literature';
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -147,6 +161,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
       ),
       body: SwipeBackWrapper(
         child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           child: Center(
             child: ConstrainedBox(
@@ -202,7 +217,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
                   // 5.5. ВЕКТОРНЫЙ ГЕОМЕТРИЧЕСКИЙ ЧЕРТЕЖ
                   if (figureType != null &&
                       (_selectedSection == 'all' || _selectedSection == 'formulas' || _selectedSection == 'rules')) ...[
-                    GeometryDiagramWidget(figureType: figureType),
+                    RepaintBoundary(child: GeometryDiagramWidget(figureType: figureType)),
                     const SizedBox(height: 14),
                   ],
 
@@ -339,7 +354,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
                       ),
                     ),
 
-                  const SizedBox(height: 32),
+                  SizedBox(height: 32 + MediaQuery.paddingOf(context).bottom),
                 ],
               ),
             ),
@@ -1162,13 +1177,15 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
+                    child: _buildParsedRichText(
                       def.note!,
-                      style: TextStyle(
+                      baseStyle: TextStyle(
                         fontSize: 12.5,
                         fontStyle: FontStyle.italic,
                         color: theme.colorScheme.primary,
                       ),
+                      theme: theme,
+                      accentColor: theme.colorScheme.primary,
                     ),
                   ),
                 ],
@@ -1193,14 +1210,15 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
     // В русском языке схема часто многострочная (Согласование: ... \n Управление: ...)
     final isMultiScheme = isRussian && formula.formula.contains('\n');
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.25)),
-      ),
+    return RepaintBoundary(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.25)),
+        ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1217,7 +1235,14 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
                 icon: const Icon(Icons.copy_rounded, size: 18),
                 tooltip: 'Скопировать формулу/схему',
                 visualDensity: VisualDensity.compact,
-                onPressed: () => _copyToClipboard(formula.formula, 'Формула'),
+                onPressed: () => _copyToClipboard(
+                  formatChemistryAndSubscripts(
+                    formula.formula,
+                    isInformatics: _preservePlainIdentifiers,
+                    isChemistry: _isChemistry,
+                  ),
+                  'Формула',
+                ),
               ),
             ],
           ),
@@ -1290,15 +1315,29 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
           ] else ...[
             // Стандартный блок формулы для математики/физики
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 color: theme.colorScheme.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.22),
+                  width: 1.0,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: MathFormulaWidget(
                 formula: formula.formula,
                 accentColor: theme.colorScheme.primary,
                 fontSize: 16.5,
+                isChemistry: _isChemistry,
+                isInformatics: _preservePlainIdentifiers,
+                allowSlashFractions: _allowSlashFractions,
                 baseStyle: TextStyle(
                   fontSize: 16.5,
                   fontWeight: FontWeight.w700,
@@ -1312,12 +1351,14 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
 
           if (formula.description != null) ...[
             const SizedBox(height: 8),
-            Text(
+            _buildParsedRichText(
               formula.description!,
-              style: TextStyle(
+              baseStyle: TextStyle(
                 fontSize: 13,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
               ),
+              theme: theme,
+              accentColor: theme.colorScheme.primary,
             ),
           ],
 
@@ -1332,20 +1373,43 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: formula.variables!.entries.map((e) {
+                  final varKeyStyle = TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
+                  );
+                  final varValStyle = TextStyle(
+                    fontSize: 12.5,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
+                  );
+                  final fmtKey = formatChemistryAndSubscripts(
+                    e.key,
+                    isInformatics: _preservePlainIdentifiers,
+                    isChemistry: _isChemistry,
+                  );
+                  final fmtVal = formatChemistryAndSubscripts(
+                    e.value,
+                    isInformatics: _preservePlainIdentifiers,
+                    isChemistry: _isChemistry,
+                  );
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2.5),
                     child: RichText(
                       text: TextSpan(
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
-                        ),
+                        style: varValStyle,
                         children: [
-                          TextSpan(
-                            text: '${e.key} — ',
-                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ...buildMathSubSupSpans(
+                            '$fmtKey — ',
+                            baseStyle: varKeyStyle,
+                            indexColor: theme.colorScheme.primary,
+                            isInformatics: _preservePlainIdentifiers,
                           ),
-                          TextSpan(text: e.value),
+                          ...buildMathSubSupSpans(
+                            fmtVal,
+                            baseStyle: varValStyle,
+                            indexColor: theme.colorScheme.primary,
+                            isInformatics: _preservePlainIdentifiers,
+                          ),
                         ],
                       ),
                     ),
@@ -1356,8 +1420,9 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
           ],
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   // =========================================================================
   // ЛАЙФХАКИ И ЛОВУШКИ
@@ -1535,13 +1600,15 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
                 const Icon(Icons.check_circle_rounded, color: Color(0xFF047857), size: 18),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
+                  child: _buildParsedRichText(
                     ex.answer,
-                    style: const TextStyle(
+                    baseStyle: const TextStyle(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w800,
                       color: Color(0xFF047857),
                     ),
+                    theme: theme,
+                    accentColor: const Color(0xFF047857),
                   ),
                 ),
               ],
@@ -1556,89 +1623,8 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
   // ПАРСЕР ТЕКСТА: ВЫДЕЛЕНИЕ ПРИМЕРОВ В КАВЫЧКАХ И СТРЕЛОК СХЕМ
   // =========================================================================
 
-  List<InlineSpan> _parseSubAndSuperSpans(
-    String text, {
-    required TextStyle baseStyle,
-    required Color color,
-  }) {
-    final subSupRegex = RegExp(
-      r'(_\{([^\}]+)\}|_([a-zA-Zа-яА-Я0-9]+)|\^\{([^\}]+)\}|\^([a-zA-Zа-яА-Я0-9]+))',
-    );
-
-    if (!subSupRegex.hasMatch(text)) {
-      return [TextSpan(text: text, style: baseStyle)];
-    }
-
-    final spans = <InlineSpan>[];
-    int lastIndex = 0;
-    final fontSize = baseStyle.fontSize ?? 14.0;
-
-    for (final match in subSupRegex.allMatches(text)) {
-      if (match.start > lastIndex) {
-        spans.add(TextSpan(
-          text: text.substring(lastIndex, match.start),
-          style: baseStyle,
-        ));
-      }
-
-      final isSubscript = match.group(0)!.startsWith('_');
-      final rawIndex = match.group(2) ?? match.group(3) ?? match.group(4) ?? match.group(5) ?? '';
-      final cleanIdx = rawIndex
-          .replaceAll(r'\text{', '')
-          .replaceAll('}', '')
-          .replaceAll(r'\Delta', 'Δ')
-          .trim();
-
-      final indexFontSize = (fontSize * 0.65).clamp(9.0, 15.0);
-
-      if (isSubscript) {
-        spans.add(WidgetSpan(
-          alignment: PlaceholderAlignment.middle,
-          child: Transform.translate(
-            offset: Offset(0, fontSize * 0.28),
-            child: Text(
-              cleanIdx,
-              style: baseStyle.copyWith(
-                fontSize: indexFontSize,
-                fontWeight: FontWeight.w800,
-                color: color,
-                letterSpacing: -0.2,
-              ),
-            ),
-          ),
-        ));
-      } else {
-        spans.add(WidgetSpan(
-          alignment: PlaceholderAlignment.middle,
-          child: Transform.translate(
-            offset: Offset(0, -fontSize * 0.32),
-            child: Text(
-              cleanIdx,
-              style: baseStyle.copyWith(
-                fontSize: indexFontSize,
-                fontWeight: FontWeight.w800,
-                color: color,
-                letterSpacing: -0.2,
-              ),
-            ),
-          ),
-        ));
-      }
-
-      lastIndex = match.end;
-    }
-
-    if (lastIndex < text.length) {
-      spans.add(TextSpan(
-        text: text.substring(lastIndex),
-        style: baseStyle,
-      ));
-    }
-
-    return spans;
-  }
-
-  /// Разбивает текст на фрагменты и подсвечивает примеры в кавычках «...» мягкими бейджами, а также парсит индексы
+  /// Разбивает текст на фрагменты и подсвечивает примеры в кавычках «...»,
+  /// а также автоматически отображает любые математические дроби (LaTeX и слэш-дроби) в виде настоящих вертикальных дробей с чертой.
   Widget _buildParsedRichText(
     String text, {
     required TextStyle baseStyle,
@@ -1648,22 +1634,166 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
     final effectiveStyle = baseStyle.color != null
         ? baseStyle
         : baseStyle.copyWith(color: theme.colorScheme.onSurface);
+    final primary = accentColor ?? theme.colorScheme.primary;
+    final formattedText = formatFormulaOperators(
+      formatChemistryAndSubscripts(
+        text,
+        isInformatics: _preservePlainIdentifiers,
+        isChemistry: _isChemistry,
+      ),
+    );
 
+    final spans = _parseTextWithFractionsAndSpans(
+      formattedText,
+      baseStyle: effectiveStyle,
+      theme: theme,
+      accentColor: primary,
+    );
+
+    return RichText(text: TextSpan(children: spans));
+  }
+
+  /// Парсит строку с выделением дробей (LaTeX \frac и слэш-дроби), кавычек «...» и индексов
+  List<InlineSpan> _parseTextWithFractionsAndSpans(
+    String text, {
+    required TextStyle baseStyle,
+    required ThemeData theme,
+    required Color accentColor,
+  }) {
+    // 1. Поиск LaTeX дробей \frac{...}{...}
+    final latexFractions = FractionParser.findLatexFractions(text);
+    if (latexFractions.isNotEmpty) {
+      final spans = <InlineSpan>[];
+      int lastIndex = 0;
+
+      for (final match in latexFractions) {
+        if (match.start > lastIndex) {
+          final prefix = text.substring(lastIndex, match.start);
+          if (prefix.isNotEmpty) {
+            spans.addAll(_parseTextWithFractionsAndSpans(
+              prefix,
+              baseStyle: baseStyle,
+              theme: theme,
+              accentColor: accentColor,
+            ));
+          }
+        }
+
+        spans.add(WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: MathFractionWidget(
+            numerator: match.numerator,
+            denominator: match.denominator,
+            baseStyle: baseStyle,
+            primaryColor: accentColor,
+            isChemistry: _isChemistry,
+            isInformatics: _preservePlainIdentifiers,
+          ),
+        ));
+        lastIndex = match.end;
+      }
+
+      if (lastIndex < text.length) {
+        final suffix = text.substring(lastIndex);
+        if (suffix.isNotEmpty) {
+          spans.addAll(_parseTextWithFractionsAndSpans(
+            suffix,
+            baseStyle: baseStyle,
+            theme: theme,
+            accentColor: accentColor,
+          ));
+        }
+      }
+
+      return spans;
+    }
+
+    // 2. Поиск математических слэш-дробей вида (a)/(b), 1/2, (2x - 5) / (x - 4)
+    final slashMatches = FractionParser.findSlashFractions(
+      text,
+      allowSlashFractions: _allowSlashFractions,
+    );
+    if (slashMatches.isNotEmpty) {
+      final spans = <InlineSpan>[];
+      int lastIndex = 0;
+
+      for (final match in slashMatches) {
+        if (match.start > lastIndex) {
+          final prefix = text.substring(lastIndex, match.start);
+          if (prefix.isNotEmpty) {
+            spans.addAll(_parseSubAndSuperAndQuoteSpans(
+              prefix,
+              baseStyle: baseStyle,
+              theme: theme,
+              accentColor: accentColor,
+            ));
+          }
+        }
+
+        spans.add(WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: MathFractionWidget(
+            numerator: match.numerator,
+            denominator: match.denominator,
+            baseStyle: baseStyle,
+            primaryColor: accentColor,
+            isChemistry: _isChemistry,
+            isInformatics: _preservePlainIdentifiers,
+          ),
+        ));
+        lastIndex = match.end;
+      }
+
+      if (lastIndex < text.length) {
+        final suffix = text.substring(lastIndex);
+        if (suffix.isNotEmpty) {
+          spans.addAll(_parseSubAndSuperAndQuoteSpans(
+            suffix,
+            baseStyle: baseStyle,
+            theme: theme,
+            accentColor: accentColor,
+          ));
+        }
+      }
+
+      return spans;
+    }
+
+    // 3. Если дробей нет, парсим кавычки «...» и надстрочные/подстрочные индексы
+    return _parseSubAndSuperAndQuoteSpans(
+      text,
+      baseStyle: baseStyle,
+      theme: theme,
+      accentColor: accentColor,
+    );
+  }
+
+  /// Парсит кавычки «...» и индексы
+  List<InlineSpan> _parseSubAndSuperAndQuoteSpans(
+    String text, {
+    required TextStyle baseStyle,
+    required ThemeData theme,
+    required Color accentColor,
+  }) {
     final spans = <InlineSpan>[];
     final regex = RegExp(r'«([^»]+)»');
     int lastMatchEnd = 0;
 
     for (final match in regex.allMatches(text)) {
       if (match.start > lastMatchEnd) {
-        spans.addAll(_parseSubAndSuperSpans(
-          text.substring(lastMatchEnd, match.start),
-          baseStyle: effectiveStyle,
-          color: effectiveStyle.color ?? theme.colorScheme.onSurface,
+        final segment = text.substring(lastMatchEnd, match.start);
+        spans.addAll(buildMathSubSupSpans(
+          _preservePlainIdentifiers
+              ? segment
+              : prettifyMathSymbols(segment, stripBraces: false),
+          baseStyle: baseStyle,
+          indexColor: baseStyle.color ?? theme.colorScheme.onSurface,
+          isInformatics: _preservePlainIdentifiers,
         ));
       }
 
       final quotedContent = match.group(0)!;
-      final pillColor = accentColor ?? theme.colorScheme.primary;
+      final pillColor = accentColor;
 
       spans.add(WidgetSpan(
         alignment: PlaceholderAlignment.middle,
@@ -1677,10 +1807,10 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
           ),
           child: Text(
             quotedContent,
-            style: effectiveStyle.copyWith(
+            style: baseStyle.copyWith(
               fontWeight: FontWeight.w700,
               fontStyle: FontStyle.italic,
-              fontSize: (effectiveStyle.fontSize ?? 14) * 0.95,
+              fontSize: (baseStyle.fontSize ?? 14) * 0.95,
               color: pillColor,
             ),
           ),
@@ -1691,13 +1821,17 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
     }
 
     if (lastMatchEnd < text.length) {
-      spans.addAll(_parseSubAndSuperSpans(
-        text.substring(lastMatchEnd),
-        baseStyle: effectiveStyle,
-        color: effectiveStyle.color ?? theme.colorScheme.onSurface,
+      final segment = text.substring(lastMatchEnd);
+      spans.addAll(buildMathSubSupSpans(
+        _preservePlainIdentifiers
+            ? segment
+            : prettifyMathSymbols(segment, stripBraces: false),
+        baseStyle: baseStyle,
+        indexColor: baseStyle.color ?? theme.colorScheme.onSurface,
+        isInformatics: _preservePlainIdentifiers,
       ));
     }
 
-    return RichText(text: TextSpan(children: spans));
+    return spans;
   }
 }

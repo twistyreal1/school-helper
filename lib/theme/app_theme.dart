@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/topic_model.dart';
 
 class AppTheme {
@@ -17,10 +19,10 @@ class AppTheme {
         );
       case AppThemeMode.midnightCyber:
         return _buildDarkTheme(
-          primary: const Color(0xFF8B5CF6),
-          secondary: const Color(0xFF06B6D4),
-          background: const Color(0xFF0A0F1D),
-          cardColor: const Color(0xFF141E33),
+          primary: const Color(0xFF38BDF8),
+          secondary: const Color(0xFF6366F1),
+          background: const Color(0xFF07090E),
+          cardColor: const Color(0xFF111420),
           accentColor: const Color(0xFFA855F7),
           textPrimary: const Color(0xFFF8FAFC),
           textSecondary: const Color(0xFF94A3B8),
@@ -78,6 +80,15 @@ class AppTheme {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          systemStatusBarContrastEnforced: false,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarDividerColor: Colors.transparent,
+          systemNavigationBarIconBrightness: Brightness.dark,
+          systemNavigationBarContrastEnforced: false,
+        ),
         iconTheme: IconThemeData(color: textPrimary),
         titleTextStyle: TextStyle(
           color: textPrimary,
@@ -101,6 +112,16 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         side: BorderSide.none,
       ),
+      splashFactory: InkSparkle.splashFactory,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
+        },
+      ),
     );
   }
 
@@ -123,7 +144,7 @@ class AppTheme {
         primary: primary,
         secondary: secondary,
         surface: cardColor,
-        surfaceContainerHighest: const Color(0xFF1E293B),
+        surfaceContainerHighest: const Color(0xFF181C2E),
         onPrimary: Colors.white,
         onSurface: textPrimary,
       ),
@@ -131,6 +152,15 @@ class AppTheme {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          systemStatusBarContrastEnforced: false,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarDividerColor: Colors.transparent,
+          systemNavigationBarIconBrightness: Brightness.light,
+          systemNavigationBarContrastEnforced: false,
+        ),
         iconTheme: IconThemeData(color: textPrimary),
         titleTextStyle: TextStyle(
           color: textPrimary,
@@ -153,6 +183,16 @@ class AppTheme {
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         side: BorderSide.none,
+      ),
+      splashFactory: InkSparkle.splashFactory,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
+        },
       ),
     );
   }

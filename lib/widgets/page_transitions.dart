@@ -3,21 +3,25 @@ import 'package:flutter/material.dart';
 /// Красивый маршрут перехода из Онбординга в Главное меню
 PageRouteBuilder<void> createOnboardingToHomeRoute(Widget target) {
   return PageRouteBuilder<void>(
-    transitionDuration: const Duration(milliseconds: 700),
+    transitionDuration: const Duration(milliseconds: 650),
+    reverseTransitionDuration: const Duration(milliseconds: 400),
     pageBuilder: (context, animation, secondaryAnimation) => target,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      // Плавная органичная кривая
+      const fluidCurve = Cubic(0.16, 1.0, 0.3, 1.0);
       final curved = CurvedAnimation(
         parent: animation,
-        curve: Curves.easeOutCubic,
+        curve: fluidCurve,
+        reverseCurve: Curves.easeInCubic,
       );
 
       return FadeTransition(
         opacity: Tween<double>(begin: 0.0, end: 1.0).animate(curved),
         child: ScaleTransition(
-          scale: Tween<double>(begin: 0.92, end: 1.0).animate(curved),
+          scale: Tween<double>(begin: 0.94, end: 1.0).animate(curved),
           child: SlideTransition(
             position: Tween<Offset>(
-              begin: const Offset(0.0, 0.05),
+              begin: const Offset(0.0, 0.04),
               end: Offset.zero,
             ).animate(curved),
             child: child,
@@ -28,7 +32,7 @@ PageRouteBuilder<void> createOnboardingToHomeRoute(Widget target) {
   );
 }
 
-/// Плавный слайд-маршрут для открытия категорий и тем
+/// Премиальный, ультра-плавный кинематический слайд-маршрут (iOS / Material 3 Fluid Style)
 class SmoothSlidePageRoute<T> extends PageRouteBuilder<T> {
   final Widget page;
 
@@ -36,27 +40,119 @@ class SmoothSlidePageRoute<T> extends PageRouteBuilder<T> {
       : super(
           pageBuilder: (context, animation, secondaryAnimation) => page,
           transitionDuration: const Duration(milliseconds: 380),
-          reverseTransitionDuration: const Duration(milliseconds: 320),
+          reverseTransitionDuration: const Duration(milliseconds: 300),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            final curved = CurvedAnimation(
+            // Элегантная кинематическая кривая без рывков
+            const enterCurve = Cubic(0.2, 0.0, 0.0, 1.0);
+            const exitCurve = Cubic(0.3, 0.0, 0.7, 0.0);
+
+            final primaryCurved = CurvedAnimation(
               parent: animation,
-              curve: Curves.easeOutCubic,
-              reverseCurve: Curves.easeInCubic,
+              curve: enterCurve,
+              reverseCurve: exitCurve,
             );
 
-            // Плавное выкатывание справа + легкий фейд
+            // Анимация открываемой страницы (плавное кинематическое выплывание без тяжелых масштабирований)
+            final enterSlide = Tween<Offset>(
+              begin: const Offset(0.08, 0.0),
+              end: Offset.zero,
+            ).animate(primaryCurved);
+
+            final enterFade = Tween<double>(
+              begin: 0.0,
+              end: 1.0,
+            ).animate(primaryCurved);
+
             return SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0.25, 0.0),
-                end: Offset.zero,
-              ).animate(curved),
+              position: enterSlide,
               child: FadeTransition(
-                opacity: Tween<double>(begin: 0.0, end: 1.0).animate(curved),
+                opacity: enterFade,
                 child: child,
               ),
             );
           },
         );
+}
+
+/// Виджет интерактивного тактильного нажатия с приятным пружинным откликом (Spring Bounce)
+class PressableBounce extends StatefulWidget {
+  final Widget child;
+  final VoidCallback? onTap;
+  final double scaleFactor;
+  final Duration duration;
+  final HitTestBehavior behavior;
+
+  const PressableBounce({
+    super.key,
+    required this.child,
+    this.onTap,
+    this.scaleFactor = 0.965,
+    this.duration = const Duration(milliseconds: 110),
+    this.behavior = HitTestBehavior.opaque,
+  });
+
+  @override
+  State<PressableBounce> createState() => _PressableBounceState();
+}
+
+class _PressableBounceState extends State<PressableBounce> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: widget.duration,
+      reverseDuration: const Duration(milliseconds: 240),
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: widget.scaleFactor,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeOutBack,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails _) {
+    _controller.forward();
+  }
+
+  void _onTapUp(TapUpDetails _) {
+    _controller.reverse();
+    widget.onTap?.call();
+  }
+
+  void _onTapCancel() {
+    _controller.reverse();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.onTap == null) {
+      return widget.child;
+    }
+
+    return GestureDetector(
+      behavior: widget.behavior,
+      onTapDown: _onTapDown,
+      onTapUp: _onTapUp,
+      onTapCancel: _onTapCancel,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: widget.child,
+      ),
+    );
+  }
 }
 
 /// Обертка для экранов с возможностью выйти свайпом влево (или вправо)
@@ -101,8 +197,7 @@ class _SwipeBackWrapperState extends State<SwipeBackWrapper> {
       onHorizontalDragEnd: (details) {
         final velocity = details.primaryVelocity ?? 0;
 
-        // Пользователь просил: свайп влево для выхода (палец движется влево, _dragDistance < -60)
-        // Также поддерживаем и классический жест вправо (velocity > 300 или _dragDistance > 80)
+        // Поддержка быстрого свайпа для закрытия
         final isSwipeLeft = _dragDistance < -60 || velocity < -350;
         final isSwipeRight = _dragDistance > 70 || velocity > 350;
 

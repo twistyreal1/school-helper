@@ -1,13 +1,13 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../data/mock_database.dart';
 import '../models/topic_model.dart';
 import '../services/user_prefs_service.dart';
 import '../widgets/app_logo.dart';
+import '../widgets/install_app_dialog.dart';
 import '../widgets/liquid_glass.dart';
 import '../widgets/page_transitions.dart';
-import 'loading_screen.dart';
-import 'onboarding_screen.dart';
 import 'subject_screen.dart';
 import 'topic_detail_screen.dart';
 
@@ -18,18 +18,41 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   String _searchQuery = '';
+  Timer? _searchDebounceTimer;
   bool _showFavoritesOnly = false;
+
+  void _onSearchChanged(String val) {
+    final trimmed = val.trim();
+    if (trimmed.isEmpty) {
+      _searchDebounceTimer?.cancel();
+      setState(() => _searchQuery = '');
+      return;
+    }
+    _searchDebounceTimer?.cancel();
+    _searchDebounceTimer = Timer(const Duration(milliseconds: 220), () {
+      if (mounted) {
+        setState(() => _searchQuery = trimmed);
+      }
+    });
+  }
 
   late AnimationController _headerAnimController;
   late Animation<double> _headerFadeAnimation;
 
+  // Анимация плавного переключения между классами
+  late AnimationController _gradeTransitionController;
+  late Animation<double> _gradeFadeAnimation;
+  late Animation<Offset> _gradeSlideAnimation;
+  int? _displayedGrade;
+
   @override
   void initState() {
     super.initState();
+    _displayedGrade = UserPrefsService().grade;
     UserPrefsService().addListener(_onPrefsChanged);
 
     _headerAnimController = AnimationController(
@@ -41,18 +64,42 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       curve: Curves.easeOut,
     );
     _headerAnimController.forward();
+
+    _gradeTransitionController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 320),
+    );
+    _gradeFadeAnimation = CurvedAnimation(
+      parent: _gradeTransitionController,
+      curve: Curves.easeOutCubic,
+    );
+    _gradeSlideAnimation = Tween<Offset>(
+      begin: const Offset(0.0, 0.04),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _gradeTransitionController,
+      curve: Curves.easeOutCubic,
+    ));
+    _gradeTransitionController.value = 1.0;
   }
 
   void _onPrefsChanged() {
     if (mounted) {
+      final newGrade = UserPrefsService().grade;
+      if (_displayedGrade != newGrade) {
+        _displayedGrade = newGrade;
+        _gradeTransitionController.forward(from: 0.0);
+      }
       setState(() {});
     }
   }
 
   @override
   void dispose() {
+    _searchDebounceTimer?.cancel();
     UserPrefsService().removeListener(_onPrefsChanged);
     _headerAnimController.dispose();
+    _gradeTransitionController.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -183,7 +230,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       case AppThemeMode.modernBlue:
         return const Color(0xFF2563EB);
       case AppThemeMode.midnightCyber:
-        return const Color(0xFF8B5CF6);
+        return const Color(0xFF6366F1);
       case AppThemeMode.emeraldMatcha:
         return const Color(0xFF059669);
       case AppThemeMode.warmNotebook:
@@ -306,60 +353,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             );
                           }).toList(),
                         ),
-                        const SizedBox(height: 22),
-                        const Text(
-                          'Демонстрация и предпросмотр:',
-                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => const OnboardingScreen(isEditing: true),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.auto_awesome_rounded, size: 16),
-                                label: const Text(
-                                  'Онбординг',
-                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                                ),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => const LoadingScreen(isPreview: true),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.play_circle_outline_rounded, size: 16),
-                                label: const Text(
-                                  'Экран загрузки',
-                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                                ),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
                         Row(
                           children: [
                             Expanded(
@@ -407,32 +401,72 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  String _getCurriculumLabel(Subject subject, int grade) {
-    if (grade == 8) {
-      switch (subject.id) {
-        case 'informatics':
-          return 'Л. Л. Босова • ФГОС (§ 1–5.5)';
-        case 'algebra':
-          return 'Ю. Н. Макарычев • ФГОС (§ 1–50)';
-        case 'geometry':
-          return 'Л. С. Атанасян • ФГОС (§ 1–36)';
-        case 'physics':
-          return 'И. М. Пёрышкин • ФГОС (§ 1–25)';
-        case 'biology':
-          return 'В. В. Пасечник • Линейный (§ 1–60)';
-        case 'geography':
-          return 'А. И. Алексеев • «Полярная звезда» (§ 1–56)';
-        case 'history':
-          return 'В. Р. Мединский • Новое время (§ 1–29)';
-        case 'russian':
-          return 'Т. А. Ладыженская • Синтаксис';
-        case 'literature':
-          return 'В. Я. Коровина • Анализ произведений';
-        case 'chemistry':
-          return 'О. С. Габриелян • Основы химии';
-      }
+
+    Widget _buildHeaderActionButton({
+    required BuildContext context,
+    required Widget icon,
+    required String tooltip,
+    required VoidCallback onTap,
+    bool isActive = false,
+    Color? activeColor,
+    Widget? badge,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final bgColor = isActive
+        ? (activeColor ?? theme.colorScheme.primary).withValues(alpha: isDark ? 0.22 : 0.16)
+        : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05));
+
+    final borderColor = isActive
+        ? (activeColor ?? theme.colorScheme.primary).withValues(alpha: isDark ? 0.50 : 0.40)
+        : (isDark ? Colors.white.withValues(alpha: 0.14) : Colors.black.withValues(alpha: 0.08));
+
+    Widget buttonContent = Container(
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor, width: 1.0),
+        boxShadow: isActive
+            ? [
+                BoxShadow(
+                  color: (activeColor ?? theme.colorScheme.primary).withValues(alpha: 0.25),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
+      ),
+      child: Center(child: icon),
+    );
+
+    if (badge != null) {
+      buttonContent = Stack(
+        clipBehavior: Clip.none,
+        children: [
+          buttonContent,
+          Positioned(
+            top: -4,
+            right: -4,
+            child: badge,
+          ),
+        ],
+      );
     }
-    return '${subject.grades.length} классов программы';
+
+    return Tooltip(
+      message: tooltip,
+      child: PressableBounce(
+        scaleFactor: 0.90,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2.5),
+          child: buttonContent,
+        ),
+      ),
+    );
   }
 
   @override
@@ -442,123 +476,274 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final prefs = UserPrefsService();
     final currentGrade = prefs.grade;
 
-    final subjectsForGrade = MockDatabase.subjects
-        .where((s) => s.grades.contains(currentGrade))
-        .toList();
+    final subjectsForGrade = MockDatabase.getSubjectsForGrade(currentGrade);
+    final totalGradeTopics = MockDatabase.getTopicsCountForGrade(currentGrade);
 
-    final favoriteTopics = MockDatabase.topics
-        .where((t) => prefs.isFavorite(t.id))
-        .toList();
-
-    final totalGradeTopics = MockDatabase.topics
-        .where((t) => t.grade == currentGrade)
-        .length;
+    final favoriteTopics = _showFavoritesOnly
+        ? MockDatabase.topics.where((t) => prefs.isFavorite(t.id)).toList()
+        : const <Topic>[];
 
     final isSearching = _searchQuery.isNotEmpty;
     final searchResults = isSearching
         ? MockDatabase.searchTopics(_searchQuery, grade: null)
-        : <Topic>[];
+        : const <Topic>[];
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(68),
-        child: ClipRRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: Container(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface.withValues(alpha: isDark ? 0.70 : 0.85),
-                border: Border(
-                  bottom: BorderSide(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.08)
-                        : Colors.white.withValues(alpha: 0.60),
-                    width: 1.0,
-                  ),
-                ),
+        child: RepaintBoundary(
+          child: Container(
+            decoration: BoxDecoration(
+              color: (isDark ? const Color(0xF2111420) : const Color(0xF6FFFFFF)),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(22)),
+              border: Border.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.10) : Colors.black.withValues(alpha: 0.06),
+                width: 1,
               ),
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      const AppLogo(size: 34, hasShadow: false),
-                      const SizedBox(width: 12),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.05),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+                BoxShadow(
+                  color: theme.colorScheme.primary.withValues(alpha: isDark ? 0.08 : 0.03),
+                  blurRadius: 20,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(22)),
+              child: Stack(
+                children: [
+                  // Верхний глянцевый блик Liquid Glass
+                  Positioned(
+                    top: 0,
+                    left: 20,
+                    right: 20,
+                    height: 1.2,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.white.withValues(alpha: 0.0),
+                            Colors.white.withValues(alpha: isDark ? 0.28 : 0.75),
+                            Colors.white.withValues(alpha: 0.0),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Нижняя сияющая линия-акцент темы
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 1.5,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.transparent,
+                            theme.colorScheme.primary.withValues(alpha: 0.6),
+                            theme.colorScheme.secondary.withValues(alpha: 0.6),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      child: Row(
                         children: [
-                          const Text(
-                            'Классмейт',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 18,
-                              letterSpacing: -0.4,
+                          // Логотип с мягким градиентным ореолом
+                          Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(13),
+                              gradient: LinearGradient(
+                                colors: [
+                                  theme.colorScheme.primary.withValues(alpha: 0.40),
+                                  theme.colorScheme.secondary.withValues(alpha: 0.15),
+                                ],
+                              ),
                             ),
+                            child: const AppLogo(size: 36, hasShadow: false),
                           ),
-                          Row(
+                          const SizedBox(width: 10),
+                          // Название и интерактивный бейдж класса
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: theme.colorScheme.primary,
+                              const Text(
+                                'Классмейт',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 18,
+                                  letterSpacing: -0.4,
                                 ),
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '$currentGrade класс • ФГОС',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: theme.colorScheme.primary,
-                                ),
+                              const SizedBox(height: 1),
+                              Row(
+                                children: [
+                                  PressableBounce(
+                                    scaleFactor: 0.94,
+                                    onTap: () => _showEditProfileDialog(context),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.primary.withValues(alpha: isDark ? 0.20 : 0.10),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: theme.colorScheme.primary.withValues(alpha: isDark ? 0.35 : 0.22),
+                                          width: 0.8,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            width: 5.5,
+                                            height: 5.5,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: theme.colorScheme.primary,
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: theme.colorScheme.primary.withValues(alpha: 0.6),
+                                                  blurRadius: 4,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4.5),
+                                          Text(
+                                            '$currentGrade класс',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w700,
+                                              color: theme.colorScheme.primary,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 2),
+                                          Icon(
+                                            Icons.unfold_more_rounded,
+                                            size: 11,
+                                            color: theme.colorScheme.primary,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.04),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: isDark ? Colors.white.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.08),
+                                        width: 0.8,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'ФГОС',
+                                      style: TextStyle(
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.4,
+                                        color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
+                          const Spacer(),
+                          // 1. Кнопка Избранного
+                          _buildHeaderActionButton(
+                            context: context,
+                            tooltip: _showFavoritesOnly ? 'Показать все' : 'Мои закладки',
+                            isActive: _showFavoritesOnly,
+                            activeColor: Colors.amber,
+                            badge: prefs.favorites.isNotEmpty
+                                ? Container(
+                                    padding: const EdgeInsets.all(3.5),
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.amber,
+                                    ),
+                                    child: Text(
+                                      '${prefs.favorites.length}',
+                                      style: const TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.black87,
+                                        height: 1,
+                                      ),
+                                    ),
+                                  )
+                                : null,
+                            icon: Icon(
+                              _showFavoritesOnly ? Icons.star_rounded : Icons.star_border_rounded,
+                              size: 20,
+                              color: _showFavoritesOnly ? Colors.amber : (isDark ? Colors.white70 : Colors.black87),
+                            ),
+                            onTap: () => setState(() => _showFavoritesOnly = !_showFavoritesOnly),
+                          ),
+                          // 2. Установить приложение
+                          if (!isAppAlreadyInstalled())
+                            _buildHeaderActionButton(
+                              context: context,
+                              tooltip: 'Установить приложение',
+                              icon: Icon(
+                                Icons.phone_android_rounded,
+                                size: 19,
+                                color: isDark ? Colors.white70 : Colors.black87,
+                              ),
+                              onTap: () => showInstallAppDialog(context),
+                            ),
+                          // 3. Выбор темы
+                          _buildHeaderActionButton(
+                            context: context,
+                            tooltip: 'Выбрать тему оформления',
+                            icon: Icon(
+                              Icons.palette_rounded,
+                              size: 19,
+                              color: theme.colorScheme.primary,
+                            ),
+                            onTap: () => _showThemePicker(context),
+                          ),
+                          // 4. Настройки профиля
+                          _buildHeaderActionButton(
+                            context: context,
+                            tooltip: 'Настройки профиля',
+                            icon: Icon(
+                              Icons.tune_rounded,
+                              size: 19,
+                              color: isDark ? Colors.white70 : Colors.black87,
+                            ),
+                            onTap: () => _showEditProfileDialog(context),
+                          ),
                         ],
                       ),
-                      const Spacer(),
-                      // Кнопка избранного со счётчиком
-                      IconButton(
-                        tooltip: _showFavoritesOnly ? 'Показать все' : 'Мои закладки',
-                        icon: Badge(
-                          isLabelVisible: favoriteTopics.isNotEmpty,
-                          label: Text('${favoriteTopics.length}'),
-                          child: Icon(
-                            _showFavoritesOnly ? Icons.star_rounded : Icons.star_border_rounded,
-                            color: _showFavoritesOnly ? Colors.amber : null,
-                          ),
-                        ),
-                        onPressed: () {
-                          setState(() => _showFavoritesOnly = !_showFavoritesOnly);
-                        },
-                      ),
-                      // Выбор темы
-                      IconButton(
-                        tooltip: 'Выбрать тему оформления',
-                        icon: const Icon(Icons.palette_outlined),
-                        onPressed: () => _showThemePicker(context),
-                      ),
-                      // Настройки профиля
-                      IconButton(
-                        tooltip: 'Настройки профиля',
-                        icon: const Icon(Icons.tune_rounded),
-                        onPressed: () => _showEditProfileDialog(context),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
         ),
       ),
       body: LiquidGlassBackground(
-        animate: true,
+        animate: false,
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 880),
@@ -580,7 +765,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             prefs,
                             subjectsForGrade.length,
                             totalGradeTopics,
-                            favoriteTopics.length,
+                            prefs.favorites.length,
                           ),
                         ),
                         const SizedBox(height: 18),
@@ -605,21 +790,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 else if (_showFavoritesOnly)
                   _buildFavoritesSliver(theme, favoriteTopics)
                 else ...[
-                  // Сетка школьных предметов
+                  // Сетка школьных предметов с плавной анимацией при смене класса
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    sliver: _buildSubjectsGrid(theme, subjectsForGrade, currentGrade),
-                  ),
-
-                  // Быстрые популярные формулы
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                      child: _buildQuickTopicsSection(theme, currentGrade),
+                    sliver: _buildAnimatedGradeSliver(
+                      theme: theme,
+                      subjects: subjectsForGrade,
+                      currentGrade: currentGrade,
                     ),
                   ),
 
-                  const SliverToBoxAdapter(child: SizedBox(height: 36)),
+                  // Быстрые популярные формулы с плавной анимацией
+                  _buildAnimatedQuickTopicsSliver(theme, currentGrade),
+
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: 36 + MediaQuery.paddingOf(context).bottom),
+                  ),
                 ],
               ],
             ),
@@ -647,8 +833,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         gradient: LinearGradient(
           colors: isDark
               ? [
-                  theme.colorScheme.primary.withValues(alpha: 0.38),
-                  theme.colorScheme.secondary.withValues(alpha: 0.22),
+                  theme.colorScheme.secondary.withValues(alpha: 0.42),
+                  theme.colorScheme.primary.withValues(alpha: 0.30),
                 ]
               : [
                   theme.colorScheme.primary.withValues(alpha: 0.92),
@@ -702,30 +888,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Аватарка ученика с инициалом
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withValues(alpha: 0.22),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.45),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            name.isNotEmpty ? name[0].toUpperCase() : '🎓',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -916,7 +1078,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             TextField(
               controller: _searchController,
               focusNode: _searchFocusNode,
-              onChanged: (val) => setState(() => _searchQuery = val.trim()),
+              onChanged: _onSearchChanged,
               style: const TextStyle(fontWeight: FontWeight.w600),
               decoration: InputDecoration(
                 hintText: 'Поиск формул, тем (например: "дискриминант", "Python", "Пифагор")...',
@@ -937,10 +1099,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     child: const Icon(Icons.search_rounded, color: Colors.white, size: 18),
                   ),
                 ),
-                suffixIcon: _searchQuery.isNotEmpty
+                suffixIcon: _searchController.text.isNotEmpty || _searchQuery.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear_rounded, size: 20),
                         onPressed: () {
+                          _searchDebounceTimer?.cancel();
                           _searchController.clear();
                           setState(() => _searchQuery = '');
                         },
@@ -971,9 +1134,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               children: [
                 Icon(Icons.school_rounded, size: 18, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   'Выбор класса:',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: theme.colorScheme.onSurface,
+                  ),
                 ),
               ],
             ),
@@ -1071,6 +1238,34 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
+  // Анимированная обертка сетки предметов для плавного перехода между классами
+  Widget _buildAnimatedGradeSliver({
+    required ThemeData theme,
+    required List<Subject> subjects,
+    required int currentGrade,
+  }) {
+    return SliverFadeTransition(
+      opacity: _gradeFadeAnimation,
+      sliver: _buildSubjectsGrid(theme, subjects, currentGrade),
+    );
+  }
+
+  // Анимированная секция быстрых тем при переключении класса
+  Widget _buildAnimatedQuickTopicsSliver(ThemeData theme, int currentGrade) {
+    return SliverToBoxAdapter(
+      child: FadeTransition(
+        opacity: _gradeFadeAnimation,
+        child: SlideTransition(
+          position: _gradeSlideAnimation,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+            child: _buildQuickTopicsSection(theme, currentGrade),
+          ),
+        ),
+      ),
+    );
+  }
+
   // Высокопроизводительная сетка карточек предметов Liquid Glass
   Widget _buildSubjectsGrid(ThemeData theme, List<Subject> subjects, int currentGrade) {
     final isDark = theme.brightness == Brightness.dark;
@@ -1080,18 +1275,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         maxCrossAxisExtent: 280,
         mainAxisSpacing: 14,
         crossAxisSpacing: 14,
-        childAspectRatio: 1.10,
+        childAspectRatio: 0.98,
       ),
       delegate: SliverChildBuilderDelegate(
         (context, index) {
           final subject = subjects[index];
-          final topicCount = MockDatabase.getTopicsForGradeAndSubject(
+          final topicCount = MockDatabase.getTopicsCountForGradeAndSubject(
             currentGrade,
             subject.id,
-          ).length;
-          final curriculumNote = _getCurriculumLabel(subject, currentGrade);
+          );
 
-          return InkWell(
+          return PressableBounce(
+            scaleFactor: 0.96,
             onTap: () {
               Navigator.of(context).push(
                 SmoothSlidePageRoute(
@@ -1102,7 +1297,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ),
               ).then((_) => setState(() {}));
             },
-            borderRadius: BorderRadius.circular(24),
             child: Container(
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface.withValues(alpha: isDark ? 0.68 : 0.82),
@@ -1206,18 +1400,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   letterSpacing: -0.3,
                                 ),
                               ),
-                              const SizedBox(height: 3),
-                              Text(
-                                curriculumNote,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: subject.primaryColor,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 4),
                               Text(
                                 subject.description,
                                 maxLines: 2,
@@ -1264,9 +1447,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               child: const Icon(Icons.bolt_rounded, color: Colors.amber, size: 20),
             ),
             const SizedBox(width: 8),
-            Text(
-              'Популярные шпаргалки $currentGrade класса',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Популярные шпаргалки $currentGrade класса',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                  maxLines: 1,
+                ),
+              ),
             ),
           ],
         ),
@@ -1629,3 +1819,4 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 }
+

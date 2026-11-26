@@ -638,9 +638,9 @@ const List<Topic> geometryTopics8 = [
         description: 'a и b — длины смежных сторон прямоугольника.',
       ),
       FormulaItem(
-        title: 'Площадь через диагонали и угол между ними',
-        formula: 'S = \\frac{1}{2} d^2 \\sin \\alpha',
-        description: 'd — диагональ, α — угол между диагоналями.',
+        title: 'Площадь прямоугольника через диагонали',
+        formula: 'S = \\frac{1}{2} · d^2 · \\sin \\alpha = \\frac{d^2 · \\sin \\alpha}{2}',
+        description: 'Диагонали прямоугольника равны (d₁ = d₂ = d), α — угол между диагоналями.',
       ),
     ],
     definitions: [

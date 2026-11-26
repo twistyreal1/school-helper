@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/user_prefs_service.dart';
 import '../widgets/app_logo.dart';
@@ -27,19 +26,7 @@ class _LoadingScreenState extends State<LoadingScreen>
   late AnimationController _progressController;
   late Animation<double> _pulseAnimation;
 
-  double _progressValue = 0.0;
-  String _statusText = 'Инициализация приложения...';
-  Timer? _tipTimer;
-  int _tipIndex = 0;
-
-  final List<String> _loadingTips = [
-    'Инициализация справочника...',
-    'Загрузка формул по алгебре и геометрии...',
-    'Подготовка интерактивных 2D чертежей...',
-    'Сборка шпаргалок 5–11 классов...',
-    'Настройка интерфейса Liquid Glass...',
-    'Всё готово к отличной учебе! ✨',
-  ];
+  final String _statusText = 'Загрузка справочника...';
 
   @override
   void initState() {
@@ -48,24 +35,18 @@ class _LoadingScreenState extends State<LoadingScreen>
     // 1. Анимация мягкого дыхания логотипа
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1600),
+      duration: const Duration(milliseconds: 1400),
     )..repeat(reverse: true);
 
     _pulseAnimation = Tween<double>(begin: 0.96, end: 1.04).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOutSine),
     );
 
-    // 2. Анимация прогресса загрузки
+    // 2. Анимация прогресса загрузки (быстрый запуск для слабых устройств)
     _progressController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2200),
+      duration: const Duration(milliseconds: 400),
     );
-
-    _progressController.addListener(() {
-      setState(() {
-        _progressValue = _progressController.value;
-      });
-    });
 
     _progressController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
@@ -74,30 +55,16 @@ class _LoadingScreenState extends State<LoadingScreen>
     });
 
     _progressController.forward();
-
-    // 3. Смена обучающих подсказок в процессе загрузки
-    _tipTimer = Timer.periodic(const Duration(milliseconds: 400), (timer) {
-      if (!mounted) return;
-      final newIndex = ((_progressValue * (_loadingTips.length - 1)).clamp(0, _loadingTips.length - 1)).toInt();
-      if (newIndex != _tipIndex) {
-        setState(() {
-          _tipIndex = newIndex;
-          _statusText = _loadingTips[_tipIndex];
-        });
-      }
-    });
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
     _progressController.dispose();
-    _tipTimer?.cancel();
     super.dispose();
   }
 
-  void _onLoadingCompleted() async {
-    await Future.delayed(const Duration(milliseconds: 300));
+  void _onLoadingCompleted() {
     if (!mounted) return;
 
     if (widget.isPreview) {
@@ -207,73 +174,80 @@ class _LoadingScreenState extends State<LoadingScreen>
                           const SizedBox(height: 18),
 
                           // Глянцевая полоса прогресса (Liquid Progress Bar)
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: Container(
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Stack(
+                          AnimatedBuilder(
+                            animation: _progressController,
+                            builder: (context, _) {
+                              final progress = _progressController.value;
+                              return Column(
                                 children: [
-                                  FractionallySizedBox(
-                                    widthFactor: _progressValue.clamp(0.02, 1.0),
-                                    alignment: Alignment.centerLeft,
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
                                     child: Container(
+                                      height: 8,
                                       decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            theme.colorScheme.secondary,
-                                            theme.colorScheme.primary,
-                                          ],
-                                        ),
+                                        color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
                                         borderRadius: BorderRadius.circular(10),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: theme.colorScheme.primary.withValues(alpha: 0.5),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 1),
+                                      ),
+                                      child: Stack(
+                                        children: [
+                                          FractionallySizedBox(
+                                            widthFactor: progress.clamp(0.02, 1.0),
+                                            alignment: Alignment.centerLeft,
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    theme.colorScheme.secondary,
+                                                    theme.colorScheme.primary,
+                                                  ],
+                                                ),
+                                                borderRadius: BorderRadius.circular(10),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                                                    blurRadius: 8,
+                                                    offset: const Offset(0, 1),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                          FractionallySizedBox(
+                                            widthFactor: progress.clamp(0.02, 1.0),
+                                            alignment: Alignment.centerLeft,
+                                            child: Container(
+                                              height: 2,
+                                              color: Colors.white.withValues(alpha: 0.4),
+                                            ),
                                           ),
                                         ],
                                       ),
                                     ),
                                   ),
-                                  // Блик света на прогресс-баре
-                                  FractionallySizedBox(
-                                    widthFactor: _progressValue.clamp(0.02, 1.0),
-                                    alignment: Alignment.centerLeft,
-                                    child: Container(
-                                      height: 2,
-                                      color: Colors.white.withValues(alpha: 0.4),
-                                    ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Загрузка компонентов',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                                        ),
+                                      ),
+                                      Text(
+                                        '${(progress * 100).toInt()}%',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Процент выполнения
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Загрузка компонентов',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                                ),
-                              ),
-                              Text(
-                                '${(_progressValue * 100).toInt()}%',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ),
-                            ],
+                              );
+                            },
                           ),
                         ],
                       ),

@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import '../models/topic_model.dart';
 import 'algebra_topics.dart';
 import 'geometry_topics.dart';
+import 'geometry_topics_7.dart';
+import 'geometry_topics_9.dart';
+import 'physics_topics_7.dart';
+import 'russian_topics_7.dart';
 import 'physics_topics.dart';
 import 'russian_topics.dart';
 import 'biology_topics.dart';
@@ -9,6 +13,29 @@ import 'literature_topics.dart';
 import 'history_topics.dart';
 import 'geography_topics.dart';
 import 'informatics_topics.dart';
+import 'algebra_topics_7.dart';
+import 'algebra_topics_9.dart';
+import 'informatics_topics_7.dart';
+import 'informatics_topics_9.dart';
+import 'probability_topics_7.dart';
+import 'literature_topics_7.dart';
+import 'english_topics_7.dart';
+import 'probability_topics_8.dart';
+import 'english_topics_8.dart';
+import 'biology_topics_7.dart';
+import 'history_topics_7.dart';
+import 'physics_topics_9.dart';
+import 'chemistry_topics_9.dart';
+import 'russian_topics_9.dart';
+import 'literature_topics_9.dart';
+import 'biology_topics_9.dart';
+import 'geography_topics_7.dart';
+import 'geography_topics_9.dart';
+import 'history_topics_9.dart';
+import 'probability_topics_9.dart';
+import 'chemistry_topics_8.dart';
+import 'history_world_topics_9.dart';
+import 'english_topics_9.dart';
 
 class MockDatabase {
   static const List<Subject> subjects = [
@@ -45,7 +72,7 @@ class MockDatabase {
       icon: Icons.science_rounded,
       primaryColor: Color(0xFFEC4899),
       secondaryColor: Color(0xFFF472B6),
-      description: 'Вещества, реакции, таблица Менделеева, моль',
+      description: 'Вещества, реакции, таблица Менделеева, моль, классы неорганики и ОВР (8–9 кл.)',
       grades: [8, 9, 10, 11],
     ),
     Subject(
@@ -81,7 +108,7 @@ class MockDatabase {
       icon: Icons.public_rounded,
       primaryColor: Color(0xFF06B6D4),
       secondaryColor: Color(0xFF67E8F9),
-      description: 'Природа и население России: рельеф, климат, реки, зоны (§ 1–56)',
+      description: 'Материки и океаны (7 кл.), природа России (8 кл.), хозяйство и регионы России (9 кл.)',
       grades: [5, 6, 7, 8, 9, 10, 11],
     ),
     Subject(
@@ -90,7 +117,7 @@ class MockDatabase {
       icon: Icons.account_balance_rounded,
       primaryColor: Color(0xFFEA580C),
       secondaryColor: Color(0xFFFB923C),
-      description: 'Всеобщая история: Новое время XVIII — начало XIX в. (§ 1–29)',
+      description: 'Всеобщая история и история России XVI — начала XX в. (7–9 кл.)',
       grades: [5, 6, 7, 8, 9, 10, 11],
     ),
     Subject(
@@ -100,6 +127,24 @@ class MockDatabase {
       primaryColor: Color(0xFF6366F1),
       secondaryColor: Color(0xFF818CF8),
       description: 'Системы счисления, алгебра логики, алгоритмы, Паскаль, Python (§ 1–5.5)',
+      grades: [7, 8, 9, 10, 11],
+    ),
+    Subject(
+      id: 'english',
+      name: 'Английский язык',
+      icon: Icons.language_rounded,
+      primaryColor: Color(0xFF0284C7),
+      secondaryColor: Color(0xFF38BDF8),
+      description: 'Грамматика, лексика, времена, фразовые глаголы (Spotlight 7–9)',
+      grades: [5, 6, 7, 8, 9, 10, 11],
+    ),
+    Subject(
+      id: 'probability',
+      name: 'Вероятность и статистика',
+      icon: Icons.analytics_rounded,
+      primaryColor: Color(0xFFD97706),
+      secondaryColor: Color(0xFFFBBF24),
+      description: 'Таблицы, диаграммы, графы, множества, комбинаторика, вероятность и случайные величины (7–9 кл.)',
       grades: [7, 8, 9, 10, 11],
     ),
   ];
@@ -121,127 +166,9 @@ class MockDatabase {
     ...physicsTopics8,
 
     // =========================================================================
-    // 8 КЛАСС: ХИМИЯ
+    // 8 КЛАСС: ХИМИЯ (по учебнику О. С. Габриеляна и др. § 1–39)
     // =========================================================================
-    Topic(
-      id: 'chem_8_basic_concepts',
-      title: 'Вещества, смеси и химические явления',
-      subjectId: 'chemistry',
-      grade: 8,
-      shortSummary: 'Физические и химические явления. Закон сохранения массы веществ (М.В. Ломоносов).',
-      definitions: [
-        DefinitionItem(
-          term: 'Физические явления',
-          definition: 'Явления, при которых состав вещества не меняется (таяние льда, испарение воды, измельчение сахара).',
-        ),
-        DefinitionItem(
-          term: 'Химические явления (реакции)',
-          definition: 'Явления, при которых из одних веществ образуются другие. Признаки: выпадение осадка, выделение газа, изменение цвета, выделение тепла/света.',
-        ),
-      ],
-      rules: [
-        'Закон сохранения массы: Масса веществ, вступивших в реакцию, равна массе образовавшихся веществ.',
-      ],
-      tags: ['вещества', 'смеси', 'химические явления', 'химия 8'],
-    ),
-    Topic(
-      id: 'chem_8_valence',
-      title: 'Валентность и составление формул',
-      subjectId: 'chemistry',
-      grade: 8,
-      shortSummary: 'Способность атома образовывать определенное число химических связей. Водород всегда I, кислород всегда II.',
-      rules: [
-        'Постоянная валентность: I (H, Na, K, Li), II (O, Ca, Mg, Ba, Zn), III (Al).',
-        'Алгоритм составления формулы: Находим НОК валентностей элементов и делим НОК на валентность каждого элемента.',
-      ],
-      example: ExampleItem(
-        task: 'Составить формулу оксида алюминия',
-        steps: [
-          '1. Валентность Al равна III, валентность O равна II: Al^(III) O^(II).',
-          '2. Находим НОК(3, 2) = 6.',
-          '3. Индекс Al: 6 / 3 = 2. Индекс O: 6 / 2 = 3.',
-        ],
-        answer: 'Ответ: Al₂O₃',
-      ),
-      tags: ['валентность', 'индексы', 'формулы веществ'],
-    ),
-    Topic(
-      id: 'chem_8_reaction_types',
-      title: 'Типы химических реакций',
-      subjectId: 'chemistry',
-      grade: 8,
-      shortSummary: '4 главных типа химических реакций: соединение, разложение, замещение и обмен.',
-      definitions: [
-        DefinitionItem(term: 'Соединение', definition: 'Из нескольких веществ образуется одно сложное: A + B = AB (например, 2H₂ + O₂ = 2H₂O).'),
-        DefinitionItem(term: 'Разложение', definition: 'Из одного сложного образуется несколько: AB = A + B (например, 2H₂O = 2H₂ + O₂).'),
-        DefinitionItem(term: 'Замещение', definition: 'Простое вещество замещает атом в сложном: A + BC = AC + B (например, Zn + 2HCl = ZnCl₂ + H₂↑).'),
-        DefinitionItem(term: 'Обмен', definition: 'Два сложных вещества обмениваются составными частями: AB + CD = AD + CB (например, NaOH + HCl = NaCl + H₂O).'),
-      ],
-      tags: ['типы реакций', 'соединение', 'разложение', 'замещение', 'обмен'],
-    ),
-    Topic(
-      id: 'chem_8_mole',
-      title: 'Количество вещества: моль, масса и объем газа',
-      subjectId: 'chemistry',
-      grade: 8,
-      shortSummary: 'Фундаментальные расчетные формулы химии: n = m/M, n = V/Vm, N = n · Na.',
-      formulas: [
-        FormulaItem(title: 'Количество вещества через массу', formula: 'n = m / M  (моль = г / (г/моль))'),
-        FormulaItem(title: 'Количество вещества через объем газа', formula: 'n = V / V_m  (V_m = 22.4 л/моль при н.у.)'),
-        FormulaItem(title: 'Число частиц через число Авогадро', formula: 'N = n · N_A  (N_A = 6.02 · 10²³ моль⁻¹)'),
-      ],
-      tags: ['моль', 'авогадро', 'молярная масса', 'объем газа'],
-    ),
-    Topic(
-      id: 'chem_8_periodic_law',
-      title: 'Периодический закон и строение атома',
-      subjectId: 'chemistry',
-      grade: 8,
-      shortSummary: 'Атом состоит из ядра (протоны p⁺, нейтроны n⁰) и электронной оболочки (электроны e⁻).',
-      formulas: [
-        FormulaItem(title: 'Состав атома', formula: 'Число протонов = Число электронов = Порядковый номер Z\nЧисло нейтронов N = A - Z (где A — атомная масса)'),
-      ],
-      rules: [
-        'Номер периода = число электронных слоев (энергетических уровней).',
-        'Номер группы (для главных подгрупп) = число валентных электронов на внешнем слое.',
-        'Слева направо по периоду: неметаллические свойства усиливаются, радиус атома уменьшается.',
-        'Сверху вниз по группе: металлические свойства усиливаются, радиус атома увеличивается.',
-      ],
-      tags: ['менделеев', 'атом', 'периодический закон', 'электроны'],
-    ),
-    Topic(
-      id: 'chem_8_classes',
-      title: 'Основные классы неорганических веществ',
-      subjectId: 'chemistry',
-      grade: 8,
-      shortSummary: 'Оксиды, основания (гидроксиды), кислоты и соли: классификация, свойства и индикаторы.',
-      formulas: [
-        FormulaItem(title: 'Оксиды', formula: 'ЭₓOᵧ (основные: Na₂O, CuO; кислотные: CO₂, SO₃; амфотерные: Al₂O₃, ZnO)'),
-        FormulaItem(title: 'Основания', formula: 'Me(OH)ₙ (щелочи: NaOH, KOH, Ba(OH)₂; нерастворимые: Cu(OH)₂, Fe(OH)₃)'),
-        FormulaItem(title: 'Кислоты', formula: 'Hₙ(кислотный остаток) (HCl, H₂SO₄, HNO₃, H₃PO₄)'),
-        FormulaItem(title: 'Соли', formula: 'Meₓ(кислотный остаток)ᵧ (NaCl, CaCO₃, FeSO₄)'),
-        FormulaItem(title: 'Нейтрализация', formula: 'Кислота + Основание = Соль + H₂O'),
-      ],
-      rules: [
-        'Индикатор фенолфталеин малиновый ТОЛЬКО в щелочах!',
-        'Лакмус: в кислоте красный, в щелочи синий, в воде фиолетовый.',
-      ],
-      tags: ['оксиды', 'кислоты', 'основания', 'соли', 'индикаторы'],
-    ),
-    Topic(
-      id: 'chem_8_solutions',
-      title: 'Растворы и массовая доля растворенного вещества',
-      subjectId: 'chemistry',
-      grade: 8,
-      shortSummary: 'Расчет концентрации растворов: ω = (m_вещества / m_раствора) · 100%.',
-      formulas: [
-        FormulaItem(
-          title: 'Массовая доля вещества',
-          formula: 'ω = (m_в-ва / m_р-ра) · 100%\nm_раствора = m_в-ва + m_воды',
-        ),
-      ],
-      tags: ['растворы', 'массовая доля', 'концентрация'],
-    ),
+    ...chemistryTopics8,
 
     // =========================================================================
     // 8 КЛАСС: РУССКИЙ ЯЗЫК (по учебнику С.Г. Бархударова и др.)
@@ -272,32 +199,257 @@ class MockDatabase {
     // 8 КЛАСС: ИНФОРМАТИКА (по учебнику Л.Л. Босовой, А.Ю. Босовой ФГОС)
     // =========================================================================
     ...informaticsTopics8,
+
+    // =========================================================================
+    // 7 КЛАСС: ГЕОМЕТРИЯ (по учебнику Л.С. Атанасяна и др. п. 1–45)
+    // =========================================================================
+    ...geometryTopics7,
+
+    // =========================================================================
+    // 9 КЛАСС: ГЕОМЕТРИЯ (по учебнику Л.С. Атанасяна и др. п. 84–137)
+    // =========================================================================
+    ...geometryTopics9,
+
+    // =========================================================================
+    // 7 КЛАСС: ФИЗИКА (по учебнику А.В. Пёрышкина § 1–68)
+    // =========================================================================
+    ...physicsTopics7,
+
+    // =========================================================================
+    // 7 КЛАСС: РУССКИЙ ЯЗЫК (по учебнику М.Т. Баранова и др. § 1–56)
+    // =========================================================================
+    ...russianTopics7,
+
+    // =========================================================================
+    // 7 КЛАСС: АЛГЕБРА (по учебнику Ю.Н. Макарычева и др. п. 1–46)
+    // =========================================================================
+    ...algebraTopics7,
+
+    // =========================================================================
+    // 9 КЛАСС: АЛГЕБРА (по учебнику Ю.Н. Макарычева и др. п. 1–31)
+    // =========================================================================
+    ...algebraTopics9,
+
+    // =========================================================================
+    // 7 КЛАСС: ИНФОРМАТИКА (по учебнику Л.Л. Босовой и др. § 1.1–5.2)
+    // =========================================================================
+    ...informaticsTopics7,
+
+    // =========================================================================
+    // 9 КЛАСС: ИНФОРМАТИКА (по учебнику Л.Л. Босовой и др. § 1.1–4.4)
+    // =========================================================================
+    ...informaticsTopics9,
+
+    // =========================================================================
+    // 7 КЛАСС: ВЕРОЯТНОСТЬ И СТАТИСТИКА (по учебнику И.Р. Высоцкого и др. п. 1–31)
+    // =========================================================================
+    ...probabilityTopics7,
+
+    // =========================================================================
+    // 7 КЛАСС: ЛИТЕРАТУРА (по учебнику В.Я. Коровиной и др. Ч. 1 и 2)
+    // =========================================================================
+    ...literatureTopics7,
+
+    // =========================================================================
+    // 7 КЛАСС: АНГЛИЙСКИЙ ЯЗЫК (по учебнику Spotlight 7, Ваулина и др. Модули 1–10)
+    // =========================================================================
+    ...englishTopics7,
+
+    // =========================================================================
+    // 8 КЛАСС: ВЕРОЯТНОСТЬ И СТАТИСТИКА (по учебнику И.Р. Высоцкого и др. п. 32–45)
+    // =========================================================================
+    ...probabilityTopics8,
+
+    // =========================================================================
+    // 8 КЛАСС: АНГЛИЙСКИЙ ЯЗЫК (по учебнику Spotlight 8, Ваулина и др. Модули 1–8)
+    // =========================================================================
+    ...englishTopics8,
+
+    // =========================================================================
+    // 7 КЛАСС: БИОЛОГИЯ (по учебнику В.В. Пасечника «Линия жизни» § 1–26)
+    // =========================================================================
+    ...biologyTopics7,
+
+    // =========================================================================
+    // 7 КЛАСС: ВСЕОБЩАЯ ИСТОРИЯ (История Нового времени XV–XVII вв. § 1–23)
+    // =========================================================================
+    ...historyTopics7,
+
+    // =========================================================================
+    // 9 класс: Физика (Пёрышкин, § 1–67)
+    // =========================================================================
+    ...physicsTopics9,
+
+    // =========================================================================
+    // 9 класс: Химия (Рудзитис, Фельдман, § 1–41)
+    // =========================================================================
+    ...chemistryTopics9,
+
+    // =========================================================================
+    // 9 класс: Русский язык (Бархударов, § 1–28)
+    // =========================================================================
+    ...russianTopics9,
+
+    // =========================================================================
+    // 9 класс: Литература (Коровина, темы 1–29)
+    // =========================================================================
+    ...literatureTopics9,
+
+    // =========================================================================
+    // 9 класс: Биология (Пасечник, темы 1–60)
+    // =========================================================================
+    ...biologyTopics9,
+
+    // =========================================================================
+    // 7 класс: География (А. И. Алексеев и др., «Полярная звезда», § 1–58)
+    // =========================================================================
+    ...geographyTopics7,
+
+    // =========================================================================
+    // 9 класс: География (А. И. Алексеев и др., «Полярная звезда», § 1–59)
+    // =========================================================================
+    ...geographyTopics9,
+
+    // =========================================================================
+    // 9 класс: История России (В. Р. Мединский, А. В. Торкунов, § 1–37)
+    // =========================================================================
+    ...historyTopics9,
+
+    // =========================================================================
+    // 9 класс: Вероятность и статистика (И. Р. Высоцкий, И. В. Ященко, п. 46–65)
+    // =========================================================================
+    ...probabilityTopics9,
+
+    // =========================================================================
+    // 9 класс: Всеобщая история (В. Р. Мединский, А. О. Чубарьян, § 1–23)
+    // =========================================================================
+    ...historyWorldTopics9,
+
+    // =========================================================================
+    // 9 класс: Английский язык (Spotlight 9, Ю. Е. Ваулина и др., Модули 1–8)
+    // =========================================================================
+    ...englishTopics9,
   ];
 
+  static Map<int, Map<String, List<Topic>>>? _cachedGradeSubjectTopics;
+  static Map<int, int>? _cachedGradeTopicCounts;
+  static Map<String, String>? _cachedSearchBlobs;
+  static Map<int, List<Subject>>? _cachedSubjectsForGrade;
+
+  static void _ensureInitialized() {
+    if (_cachedGradeSubjectTopics != null) return;
+
+    final map = <int, Map<String, List<Topic>>>{};
+    final countMap = <int, int>{};
+    final searchBlobs = <String, String>{};
+    final topicMap = <String, Topic>{};
+
+    for (int i = 0; i < topics.length; i++) {
+      final t = topics[i];
+      topicMap[t.id] = t;
+      final gradeMap = map.putIfAbsent(t.grade, () => <String, List<Topic>>{});
+      final list = gradeMap.putIfAbsent(t.subjectId, () => <Topic>[]);
+      list.add(t);
+
+      countMap[t.grade] = (countMap[t.grade] ?? 0) + 1;
+
+      final sb = StringBuffer();
+      sb.write(t.title);
+      sb.write(' ');
+      sb.write(t.shortSummary);
+      for (final tag in t.tags) {
+        sb.write(' ');
+        sb.write(tag);
+      }
+      for (final f in t.formulas) {
+        sb.write(' ');
+        sb.write(f.title);
+        sb.write(' ');
+        sb.write(f.formula);
+      }
+      for (final d in t.definitions) {
+        sb.write(' ');
+        sb.write(d.term);
+        sb.write(' ');
+        sb.write(d.definition);
+      }
+      for (final r in t.rules) {
+        sb.write(' ');
+        sb.write(r);
+      }
+      for (final lh in t.lifehacks) {
+        sb.write(' ');
+        sb.write(lh);
+      }
+      for (final ex in t.allExamples) {
+        sb.write(' ');
+        sb.write(ex.task);
+        sb.write(' ');
+        sb.write(ex.answer);
+        for (final s in ex.steps) {
+          sb.write(' ');
+          sb.write(s);
+        }
+      }
+      searchBlobs[t.id] = sb.toString().toLowerCase();
+    }
+
+    _cachedGradeSubjectTopics = map;
+    _cachedGradeTopicCounts = countMap;
+    _cachedSearchBlobs = searchBlobs;
+    _cachedTopicById = topicMap;
+
+    final subjMap = <int, List<Subject>>{};
+    for (int grade = 1; grade <= 11; grade++) {
+      subjMap[grade] = subjects.where((s) => s.grades.contains(grade)).toList(growable: false);
+    }
+    _cachedSubjectsForGrade = subjMap;
+  }
+
+  static List<Subject> getSubjectsForGrade(int grade) {
+    _ensureInitialized();
+    return _cachedSubjectsForGrade![grade] ?? const [];
+  }
+
+  static int getTopicsCountForGrade(int grade) {
+    _ensureInitialized();
+    return _cachedGradeTopicCounts![grade] ?? 0;
+  }
+
+  static int getTopicsCountForGradeAndSubject(int grade, String subjectId) {
+    _ensureInitialized();
+    return _cachedGradeSubjectTopics![grade]?[subjectId]?.length ?? 0;
+  }
+
   static List<Topic> getTopicsForGradeAndSubject(int grade, String subjectId) {
-    return topics.where((t) => t.grade == grade && t.subjectId == subjectId).toList();
+    _ensureInitialized();
+    return _cachedGradeSubjectTopics![grade]?[subjectId] ?? const [];
   }
 
   static List<Topic> searchTopics(String query, {int? grade}) {
     final q = query.trim().toLowerCase();
-    if (q.isEmpty) return [];
+    if (q.isEmpty) return const [];
 
-    return topics.where((t) {
-      if (grade != null && t.grade != grade) return false;
-      final inTitle = t.title.toLowerCase().contains(q);
-      final inSummary = t.shortSummary.toLowerCase().contains(q);
-      final inTags = t.tags.any((tag) => tag.toLowerCase().contains(q));
-      final inFormulas = t.formulas.any((f) =>
-          f.title.toLowerCase().contains(q) || f.formula.toLowerCase().contains(q));
-      final inDefs = t.definitions.any((d) =>
-          d.term.toLowerCase().contains(q) || d.definition.toLowerCase().contains(q));
-      final inRules = t.rules.any((r) => r.toLowerCase().contains(q));
-      final inLifehacks = t.lifehacks.any((lh) => lh.toLowerCase().contains(q));
-      final inExamples = t.allExamples.any((e) =>
-          e.task.toLowerCase().contains(q) ||
-          e.steps.any((s) => s.toLowerCase().contains(q)) ||
-          e.answer.toLowerCase().contains(q));
-      return inTitle || inSummary || inTags || inFormulas || inDefs || inRules || inLifehacks || inExamples;
-    }).toList();
+    _ensureInitialized();
+    final blobs = _cachedSearchBlobs!;
+    final results = <Topic>[];
+
+    for (int i = 0; i < topics.length; i++) {
+      final t = topics[i];
+      if (grade != null && t.grade != grade) continue;
+      final blob = blobs[t.id];
+      if (blob != null && blob.contains(q)) {
+        results.add(t);
+      }
+    }
+
+    return results;
+  }
+
+  static Map<String, Topic>? _cachedTopicById;
+
+  static Topic? getTopicById(String id) {
+    _ensureInitialized();
+    return _cachedTopicById?[id];
   }
 }

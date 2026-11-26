@@ -375,18 +375,18 @@ class _GeometryPainter extends CustomPainter {
     canvas.drawLine(rect.topLeft, rect.bottomRight, aux);
     canvas.drawLine(rect.bottomLeft, rect.topRight, aux);
 
-    _drawLabel(canvas, 'a', Offset(rect.center.dx, rect.bottom + 4));
-    _drawLabel(canvas, 'a', Offset(rect.left - 16, rect.center.dy - 8));
-    _drawLabel(canvas, 'S = a²', Offset(rect.center.dx - 22, rect.center.dy - 18), color: accentColor);
+    _drawLabel(canvas, 'a', Offset(rect.center.dx - 6, rect.bottom + 8));
+    _drawLabel(canvas, 'a', Offset(rect.left - 24, rect.center.dy - 8));
+    _drawLabel(canvas, 'S = a²', Offset(rect.center.dx - 24, rect.center.dy - 8), color: accentColor);
   }
 
   void _drawRightTriangle(Canvas canvas, Size size, Paint stroke, Paint fill, Paint aux) {
     final w = size.width;
     final h = size.height;
 
-    final pC = Offset(w * 0.2, h * 0.82); // Прямой угол
-    final pA = Offset(w * 0.82, h * 0.82);
-    final pB = Offset(w * 0.2, h * 0.2);
+    final pC = Offset(w * 0.22, h * 0.82); // Прямой угол
+    final pA = Offset(w * 0.84, h * 0.82);
+    final pB = Offset(w * 0.22, h * 0.2);
 
     final path = Path()
       ..moveTo(pC.dx, pC.dy)
@@ -412,13 +412,13 @@ class _GeometryPainter extends CustomPainter {
       ..strokeWidth = 1.8;
     canvas.drawLine(pC, pH, dashPaint);
 
-    _drawLabel(canvas, 'C (90°)', Offset(pC.dx - 20, pC.dy + 4));
-    _drawLabel(canvas, 'A', Offset(pA.dx + 6, pA.dy - 6));
-    _drawLabel(canvas, 'B', Offset(pB.dx - 16, pB.dy - 18));
-    _drawLabel(canvas, 'a (катет)', Offset(pC.dx - 32, (pC.dy + pB.dy) / 2 - 8));
-    _drawLabel(canvas, 'b (катет)', Offset((pC.dx + pA.dx) / 2 - 20, pC.dy + 4));
+    _drawLabel(canvas, 'C (90°)', Offset(pC.dx - 24, pC.dy + 8));
+    _drawLabel(canvas, 'A', Offset(pA.dx + 8, pA.dy - 6));
+    _drawLabel(canvas, 'B', Offset(pB.dx - 16, pB.dy - 20));
+    _drawLabel(canvas, 'a (катет)', Offset(pC.dx - 68, (pC.dy + pB.dy) / 2 - 8));
+    _drawLabel(canvas, 'b (катет)', Offset((pC.dx + pA.dx) / 2 - 24, pC.dy + 8));
     _drawLabel(canvas, 'c (гипотенуза)', Offset((pA.dx + pB.dx) / 2 + 10, (pA.dy + pB.dy) / 2 - 12), color: accentColor);
-    _drawLabel(canvas, 'h_c', Offset((pC.dx + pH.dx) / 2 - 14, (pC.dy + pH.dy) / 2 - 14), color: Colors.teal);
+    _drawLabel(canvas, 'h_c', Offset((pC.dx + pH.dx) / 2 + 8, (pC.dy + pH.dy) / 2 - 8), color: Colors.teal);
   }
 
   void _drawSimilarTriangles(Canvas canvas, Size size, Paint stroke, Paint fill, Paint aux) {
@@ -600,13 +600,13 @@ class _GeometryPainter extends CustomPainter {
     canvas.drawLine(pB, pA, inscribedPaint);
     canvas.drawLine(pB, pC, inscribedPaint);
 
-    _drawLabel(canvas, 'O', Offset(pO.dx - 14, pO.dy - 16));
-    _drawLabel(canvas, 'A', Offset(pA.dx - 16, pA.dy));
-    _drawLabel(canvas, 'C', Offset(pC.dx + 6, pC.dy));
-    _drawLabel(canvas, 'B', Offset(pB.dx - 4, pB.dy - 18), color: Colors.teal);
+    _drawLabel(canvas, 'O', Offset(pO.dx - 8, pO.dy - 20));
+    _drawLabel(canvas, 'A', Offset(pA.dx - 22, pA.dy + 4));
+    _drawLabel(canvas, 'C', Offset(pC.dx + 8, pC.dy + 4));
+    _drawLabel(canvas, 'B', Offset(pB.dx - 6, pB.dy - 20), color: Colors.teal);
 
-    _drawLabel(canvas, '2α (центр.)', Offset(pO.dx - 18, pO.dy + 6), color: accentColor);
-    _drawLabel(canvas, 'α (впис.)', Offset(pB.dx - 10, pB.dy + 14), color: Colors.teal);
+    _drawLabel(canvas, '2α (центр.)', Offset(pO.dx - 36, pO.dy + radius * 0.24), color: accentColor);
+    _drawLabel(canvas, 'α (впис.)', Offset(pB.dx - 26, pB.dy + 22), color: Colors.teal);
   }
 
   void _drawInscribedQuad(Canvas canvas, Size size, Paint stroke, Paint fill, Paint aux) {
@@ -745,6 +745,28 @@ class _GeometryPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     );
     tp.layout();
+
+    const padH = 5.0;
+    const padV = 2.0;
+    final pillRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        offset.dx - padH,
+        offset.dy - padV,
+        tp.width + padH * 2,
+        tp.height + padV * 2,
+      ),
+      const Radius.circular(5.0),
+    );
+    final pillBgPaint = Paint()
+      ..color = (isDark ? const Color(0xFF131726) : Colors.white).withValues(alpha: 0.94)
+      ..style = PaintingStyle.fill;
+    final pillBorderPaint = Paint()
+      ..color = (isDark ? const Color(0xFF283048) : const Color(0xFFCBD5E1)).withValues(alpha: 0.7)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8;
+    canvas.drawRRect(pillRect, pillBgPaint);
+    canvas.drawRRect(pillRect, pillBorderPaint);
+
     tp.paint(canvas, offset);
   }
 

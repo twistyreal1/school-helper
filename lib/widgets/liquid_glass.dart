@@ -1,10 +1,9 @@
 import 'dart:math' as math;
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
-/// Виджет динамического фона с плавающими органическими жидкими каплями (Liquid Orbs).
-/// Создает эффект глубины, преломления и «жидкого стекла» (liquid glass) под матовыми карточками.
-class LiquidGlassBackground extends StatefulWidget {
+/// Виджет динамического фона с легким градиентным свечением.
+/// Оптимизирован для ультра-бюджетных устройств (0 FPS-просадок, без тикеров и без тяжелых шейдеров размытия).
+class LiquidGlassBackground extends StatelessWidget {
   final Widget? child;
   final List<Color>? orbColors;
   final bool animate;
@@ -13,44 +12,8 @@ class LiquidGlassBackground extends StatefulWidget {
     super.key,
     this.child,
     this.orbColors,
-    this.animate = true,
+    this.animate = false,
   });
-
-  @override
-  State<LiquidGlassBackground> createState() => _LiquidGlassBackgroundState();
-}
-
-class _LiquidGlassBackgroundState extends State<LiquidGlassBackground>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 12),
-    );
-    if (widget.animate) {
-      _controller.repeat(reverse: true);
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant LiquidGlassBackground oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.animate && !_controller.isAnimating) {
-      _controller.repeat(reverse: true);
-    } else if (!widget.animate && _controller.isAnimating) {
-      _controller.stop();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,146 +24,58 @@ class _LiquidGlassBackgroundState extends State<LiquidGlassBackground>
     final secondary = theme.colorScheme.secondary;
     final baseBg = theme.scaffoldBackgroundColor;
 
-    // Цвета жидких капель
-    final defaultOrbs = [
-      primary.withValues(alpha: isDark ? 0.45 : 0.28),
-      secondary.withValues(alpha: isDark ? 0.38 : 0.22),
-      (isDark ? const Color(0xFF6366F1) : const Color(0xFF38BDF8))
-          .withValues(alpha: isDark ? 0.32 : 0.20),
-      primary.withValues(alpha: isDark ? 0.25 : 0.15),
-    ];
-
-    final colors = widget.orbColors ?? defaultOrbs;
-
     return Stack(
       fit: StackFit.expand,
       children: [
-        // 1. Базовый фон темы
-        Container(color: baseBg),
+        // 1. Гарантированно непрозрачный базовый фон темы (устраняет просвечивание белого окна/браузера)
+        ColoredBox(color: baseBg),
 
-        // 2. Анимированные жидкие сферы в изолированном слое отрисовки
-        RepaintBoundary(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              AnimatedBuilder(
-                animation: _controller,
-                builder: (context, _) {
-                  final t = _controller.value;
-                  return CustomPaint(
-                    painter: _LiquidOrbsPainter(
-                      progress: t,
-                      colors: colors,
-                      isDark: isDark,
-                    ),
-                    size: Size.infinite,
-                  );
-                },
-              ),
-              Positioned.fill(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 45, sigmaY: 45),
-                  child: const ColoredBox(color: Colors.transparent),
+        // 2. Мягкое глубокое свечение сверху-слева (в темной теме - глубокий индиго/неон)
+        Positioned(
+          top: -140,
+          left: -100,
+          width: 520,
+          height: 520,
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    (isDark ? secondary : primary).withValues(alpha: isDark ? 0.24 : 0.08),
+                    Colors.transparent,
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
 
-        // 3. Контент поверх фона в собственном слое отрисовки
-        if (widget.child != null)
-          RepaintBoundary(
-            child: widget.child!,
+        // 3. Мягкое глубокое свечение снизу-справа (в темной теме - лазурный сапфир)
+        Positioned(
+          bottom: -120,
+          right: -80,
+          width: 480,
+          height: 480,
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    (isDark ? primary : secondary).withValues(alpha: isDark ? 0.18 : 0.06),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
           ),
+        ),
+
+        // 4. Контент
+        if (child != null) RepaintBoundary(child: child!),
       ],
     );
-  }
-}
-
-class _LiquidOrbsPainter extends CustomPainter {
-  final double progress;
-  final List<Color> colors;
-  final bool isDark;
-
-  _LiquidOrbsPainter({
-    required this.progress,
-    required this.colors,
-    required this.isDark,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (size.width <= 0 || size.height <= 0) return;
-
-    final w = size.width;
-    final h = size.height;
-
-    // Капля 1: Верхняя левая, плавно плавает
-    final orb1Center = Offset(
-      w * 0.22 + math.sin(progress * math.pi * 2) * (w * 0.14),
-      h * 0.20 + math.cos(progress * math.pi * 2) * (h * 0.10),
-    );
-    final orb1Radius = math.min(w, h) * 0.48;
-    final paint1 = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          colors[0 % colors.length],
-          colors[0 % colors.length].withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromCircle(center: orb1Center, radius: orb1Radius));
-    canvas.drawCircle(orb1Center, orb1Radius, paint1);
-
-    // Капля 2: Нижняя правая, движется по спирали
-    final orb2Center = Offset(
-      w * 0.78 - math.cos(progress * math.pi * 2) * (w * 0.16),
-      h * 0.76 - math.sin(progress * math.pi * 2) * (h * 0.12),
-    );
-    final orb2Radius = math.min(w, h) * 0.52;
-    final paint2 = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          colors[1 % colors.length],
-          colors[1 % colors.length].withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromCircle(center: orb2Center, radius: orb2Radius));
-    canvas.drawCircle(orb2Center, orb2Radius, paint2);
-
-    // Капля 3: Центрально-боковая пульсирующая
-    final orb3Center = Offset(
-      w * 0.65 + math.sin(progress * math.pi * 2 + 1.2) * (w * 0.18),
-      h * 0.35 + math.cos(progress * math.pi * 2 + 0.8) * (h * 0.14),
-    );
-    final orb3Radius = math.min(w, h) * (0.38 + 0.08 * math.sin(progress * math.pi * 2));
-    final paint3 = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          colors[2 % colors.length],
-          colors[2 % colors.length].withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromCircle(center: orb3Center, radius: orb3Radius));
-    canvas.drawCircle(orb3Center, orb3Radius, paint3);
-
-    // Капля 4: Нижняя левая вспомогательная
-    final orb4Center = Offset(
-      w * 0.28 + math.cos(progress * math.pi * 2 + 2.0) * (w * 0.12),
-      h * 0.82 + math.sin(progress * math.pi * 2 + 2.0) * (h * 0.08),
-    );
-    final orb4Radius = math.min(w, h) * 0.36;
-    final paint4 = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          colors[3 % colors.length],
-          colors[3 % colors.length].withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromCircle(center: orb4Center, radius: orb4Radius));
-    canvas.drawCircle(orb4Center, orb4Radius, paint4);
-  }
-
-  @override
-  bool shouldRepaint(covariant _LiquidOrbsPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-        oldDelegate.colors != colors ||
-        oldDelegate.isDark != isDark;
   }
 }
 
@@ -267,50 +142,45 @@ class LiquidGlassContainer extends StatelessWidget {
             ),
         ];
 
+    final bgTint = effectiveTint.withValues(
+      alpha: (effectiveTint.a + (isDark ? 0.20 : 0.15)).clamp(0.0, 1.0),
+    );
+
     Widget content = Container(
       margin: margin,
       decoration: BoxDecoration(
+        color: bgTint,
         borderRadius: BorderRadius.circular(borderRadius),
+        border: effectiveBorder,
         boxShadow: effectiveShadows,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(borderRadius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-          child: Stack(
-            children: [
-              // Стеклянная подложка
-              Container(
-                padding: padding,
-                decoration: BoxDecoration(
-                  color: effectiveTint,
-                  borderRadius: BorderRadius.circular(borderRadius),
-                  border: effectiveBorder,
-                ),
-                child: child,
-              ),
-
-              // Глянцевый блик верхнего края стекла (Specular Liquid Highlight)
-              if (hasSpecularHighlight)
-                Positioned(
-                  top: 0,
-                  left: 12,
-                  right: 12,
-                  height: 1.5,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.white.withValues(alpha: 0.0),
-                          Colors.white.withValues(alpha: isDark ? 0.45 : 0.80),
-                          Colors.white.withValues(alpha: 0.0),
-                        ],
-                      ),
+        child: Stack(
+          children: [
+            Padding(
+              padding: padding ?? EdgeInsets.zero,
+              child: child,
+            ),
+            if (hasSpecularHighlight)
+              Positioned(
+                top: 0,
+                left: 12,
+                right: 12,
+                height: 1.5,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.white.withValues(alpha: 0.0),
+                        Colors.white.withValues(alpha: isDark ? 0.40 : 0.75),
+                        Colors.white.withValues(alpha: 0.0),
+                      ],
                     ),
                   ),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );

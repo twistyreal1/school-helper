@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../data/mock_database.dart';
 import '../models/topic_model.dart';
@@ -23,6 +24,22 @@ class _SubjectScreenState extends State<SubjectScreen> {
   final TextEditingController _searchController = TextEditingController();
   late int _currentGrade;
   String _searchQuery = '';
+  Timer? _searchDebounceTimer;
+
+  void _onSearchChanged(String val) {
+    final trimmed = val.trim();
+    if (trimmed.isEmpty) {
+      _searchDebounceTimer?.cancel();
+      setState(() => _searchQuery = '');
+      return;
+    }
+    _searchDebounceTimer?.cancel();
+    _searchDebounceTimer = Timer(const Duration(milliseconds: 220), () {
+      if (mounted) {
+        setState(() => _searchQuery = trimmed);
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -32,6 +49,7 @@ class _SubjectScreenState extends State<SubjectScreen> {
 
   @override
   void dispose() {
+    _searchDebounceTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -118,14 +136,15 @@ class _SubjectScreenState extends State<SubjectScreen> {
                   padding: const EdgeInsets.all(16),
                   child: TextField(
                     controller: _searchController,
-                    onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                    onChanged: _onSearchChanged,
                     decoration: InputDecoration(
                       hintText: 'Поиск темы по ${widget.subject.name.toLowerCase()}...',
                       prefixIcon: const Icon(Icons.search_rounded),
-                      suffixIcon: _searchQuery.isNotEmpty
+                      suffixIcon: _searchController.text.isNotEmpty || _searchQuery.isNotEmpty
                           ? IconButton(
                               icon: const Icon(Icons.clear_rounded),
                               onPressed: () {
+                                _searchDebounceTimer?.cancel();
                                 _searchController.clear();
                                 setState(() => _searchQuery = '');
                               },
@@ -147,14 +166,16 @@ class _SubjectScreenState extends State<SubjectScreen> {
                   child: filteredTopics.isEmpty
                       ? _buildEmptyPlaceholder(theme)
                       : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                          padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + MediaQuery.paddingOf(context).bottom),
                           itemCount: filteredTopics.length,
                           separatorBuilder: (context, index) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final topic = filteredTopics[index];
                             final isFav = prefs.isFavorite(topic.id);
 
-                            return InkWell(
+                            return PressableBounce(
+                              scaleFactor: 0.97,
                               onTap: () {
                                 Navigator.of(context).push(
                                   SmoothSlidePageRoute(
@@ -162,8 +183,7 @@ class _SubjectScreenState extends State<SubjectScreen> {
                                   ),
                                 ).then((_) => setState(() {}));
                               },
-                              borderRadius: BorderRadius.circular(20),
-                            child: Container(
+                              child: Container(
                               padding: const EdgeInsets.all(18),
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.surface,

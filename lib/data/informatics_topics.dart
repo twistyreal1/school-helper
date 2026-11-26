@@ -257,10 +257,10 @@ const List<Topic> informaticsTopics8 = [
         answer: '00001101.',
       ),
       ExampleItem(
-        task: 'Ð§Ð¸ÑÐ»Ð¾ -13 Ð² Ð´Ð¾Ð¿Ð¾Ð»Ð½Ð¸ÑÐµÐ»ÑÐ½Ð¾Ð¼ ÐºÐ¾Ð´Ðµ:',
+        task: 'Число -13 в дополнительном коде:',
         steps: [
-          '1) Ð¼Ð¾Ð´ÑÐ»Ñ: 00001101',
-          '2) Ð¸Ð½Ð²ÐµÑÑÐ¸Ñ (Ð¾Ð±ÑÐ°ÑÐ½ÑÐ¹ ÐºÐ¾Ð´): 11110010',
+          '1) модуль: 00001101',
+          '2) инверсия (обратный код): 11110010',
           '3) + 1: 11110011.',
         ],
         answer: '3) + 1: 11110011.',
@@ -890,7 +890,7 @@ const List<Topic> informaticsTopics8 = [
     ],
     examples: [
       ExampleItem(
-        task: 'ÐÐ²Ð¾Ð´ Ð´Ð²ÑÑ ÑÐµÐ»ÑÑ ÑÐ¸ÑÐµÐ»:',
+        task: 'Ввод двух целых чисел:',
         steps: [
           'a = int(input())',
           'b = int(input())',
@@ -940,7 +940,7 @@ const List<Topic> informaticsTopics8 = [
     ],
     examples: [
       ExampleItem(
-        task: 'Ð Ð°Ð·Ð±Ð¸ÐµÐ½Ð¸Ðµ ÑÑÐµÑÐ·Ð½Ð°ÑÐ½Ð¾Ð³Ð¾ ÑÐ¸ÑÐ»Ð° x = 385:',
+        task: 'Разбиение трехзначного числа x = 385:',
         steps: [
           'hundreds = x // 100 # 3',
           'tens = (x // 10) % 10 # 8',
@@ -967,24 +967,24 @@ const List<Topic> informaticsTopics8 = [
     ],
     examples: [
       ExampleItem(
-        task: 'ÐÐ»Ð°ÑÑÐ¸ÑÐµÑÐºÐ¾Ðµ Ð²ÐµÑÐ²Ð»ÐµÐ½Ð¸Ðµ:',
+        task: 'Классическое ветвление:',
         steps: [
           'if score >= 90:',
-          'print("ÐÑÐ»Ð¸ÑÐ½Ð¾")',
+          'print("Отлично")',
           'elif score >= 70:',
-          'print("Ð¥Ð¾ÑÐ¾ÑÐ¾")',
+          'print("Хорошо")',
           'else:',
-          'print("ÐÑÐ¶Ð½Ð¾ Ð¿Ð¾Ð²ÑÐ¾ÑÐ¸ÑÑ")',
+          'print("Нужно повторить")',
         ],
-        answer: 'print("ÐÑÐ¶Ð½Ð¾ Ð¿Ð¾Ð²ÑÐ¾ÑÐ¸ÑÑ")',
+        answer: 'print("Нужно повторить")',
       ),
       ExampleItem(
-        task: 'ÐÑÐ¾Ð²ÐµÑÐºÐ° ÑÐµÑÐ½Ð¾ÑÑÐ¸:',
+        task: 'Проверка четности:',
         steps: [
           'if n % 2 == 0 and n > 0:',
-          'print("ÐÐ¾Ð»Ð¾Ð¶Ð¸ÑÐµÐ»ÑÐ½Ð¾Ðµ ÑÐµÑÐ½Ð¾Ðµ")',
+          'print("Положительное четное")',
         ],
-        answer: 'print("ÐÐ¾Ð»Ð¾Ð¶Ð¸ÑÐµÐ»ÑÐ½Ð¾Ðµ ÑÐµÑÐ½Ð¾Ðµ")',
+        answer: 'print("Положительное четное")',
       ),
     ],
     tags: ['if elif else', 'условия питон', 'and or not', 'ветвление python', 'босова 8'],
@@ -1016,7 +1016,7 @@ const List<Topic> informaticsTopics8 = [
     ],
     examples: [
       ExampleItem(
-        task: 'Ð¡ÑÐ¼Ð¼Ð° ÑÐ¸ÑÐµÐ» Ð¾Ñ 1 Ð´Ð¾ N ÑÐµÑÐµÐ· for:',
+        task: 'Сумма чисел от 1 до N через for:',
         steps: [
           'total = 0',
           'for i in range(1, n + 1):',
@@ -1025,7 +1025,7 @@ const List<Topic> informaticsTopics8 = [
         answer: 'total += i',
       ),
       ExampleItem(
-        task: 'Ð¦Ð¸ÐºÐ» while Ð´Ð»Ñ Ð¾Ð±ÑÐ°Ð±Ð¾ÑÐºÐ¸ ÑÐ¸ÑÑ ÑÐ¸ÑÐ»Ð°:',
+        task: 'Цикл while для обработки цифр числа:',
         steps: [
           'while n > 0:',
           'digit = n % 10',
